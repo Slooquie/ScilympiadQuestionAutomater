@@ -37,5 +37,16 @@
       "world": "MAIN",
       "all_frames": true
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "preview.html",
+        "preview.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
   ]
 }
