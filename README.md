@@ -27,7 +27,7 @@ As this extension is not published on the Chrome Web Store, you need to install 
 
 1. Click the extension icon in your Chrome toolbar.
 2. Enter your Gemini API Key in the settings popup.
-3. Select the desired Gemini Model (e.g., `gemini-1.5-pro` or `gemini-1.5-flash`).
+3. Select the desired Gemini Model 
 4. Upload your test PDF and (optionally) your Answer Key PDF.
 5. Click **Process PDF**.
 6. The extension will parse your files and open a **Review Page** in a new tab.
