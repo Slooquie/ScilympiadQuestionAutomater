@@ -209,7 +209,21 @@ function createRow(q, index) {
 
 function loadData() {
     chrome.storage.local.get(['scilympiadTestData'], function (result) {
-        const data = result.scilympiadTestData || [];
+        let data = result.scilympiadTestData || [];
+
+        // Auto-correct if the AI returns an object like { "questions": [...] }
+        if (data && !Array.isArray(data)) {
+            const keys = Object.keys(data);
+            for (let k of keys) {
+                if (Array.isArray(data[k])) {
+                    data = data[k];
+                    break;
+                }
+            }
+        }
+
+        if (!Array.isArray(data)) data = []; // Final fallback
+
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
@@ -278,7 +292,7 @@ function saveDataAndLaunch() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initPreview() {
     loadData();
 
     document.getElementById('saveAndLaunchBtn').addEventListener('click', saveDataAndLaunch);
@@ -286,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addRowBtn').addEventListener('click', () => {
         const tbody = document.getElementById('tableBody');
         const index = tbody.children.length;
-        tbody.appendChild(createRow({ question_text: '', options: [], points: 1 }, index));
+        tbody.appendChild(createRow({ question_text: '', options: ['', '', '', ''], points: 1 }, index));
     });
 
     document.getElementById('clearBtn').addEventListener('click', () => {
@@ -294,4 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('tableBody').innerHTML = '';
         }
     });
-});
+}
+
+// Run immediately since script is at end of body
+initPreview();
