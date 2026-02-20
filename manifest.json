@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Scilympiad Test Uploader",
+  "name": "Scilympiad Question Automater",
   "version": "1.0",
-  "description": "Automates the uploading of tests to Scilympiad using Gemini API.",
+  "description": "Automates the uploading of questions to Scilympiad using Gemini API.",
   "permissions": [
     "storage",
     "activeTab",

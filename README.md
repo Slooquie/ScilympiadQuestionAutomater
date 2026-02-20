@@ -1,4 +1,4 @@
-# Scilympiad Test Uploader Extension
+# Scilympiad Question Automater Extension
 
 A Chrome Extension designed to automate the process of uploading test questions (from PDFs or text) directly into the Scilympiad platform.
 
