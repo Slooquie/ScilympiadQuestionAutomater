@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            width: 400px;
+            padding: 15px;
+            font-family: sans-serif;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        input {
+            width: 100%;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            padding: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+        <button id="openTabBtn" style="font-size: 0.8em; padding: 5px; width: auto; background-color: #6c757d;">Open in
+            New Tab (Fix Uploads)</button>
+    </div>
+    <h3>Scilympiad Test Parser</h3>
+    <input type="password" id="apiKey" placeholder="Paste Gemini API Key Here">
+    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+        <select id="modelSelect" style="flex-grow: 1; padding: 5px;">
+            <option value="" disabled selected>Select a model...</option>
+        </select>
+        <button id="refreshModelsBtn" style="width: auto; padding: 5px 10px; font-size: 0.8em;"
+            title="Refresh Models">🔄</button>
+    </div>
+    <div style="margin-bottom: 10px;">
+        <label style="display:block; font-size: 0.9em; margin-bottom: 3px;">Test PDF/Text:</label>
+        <input type="file" id="testFile" accept=".pdf,.txt">
+    </div>
+    <div style="margin-bottom: 10px;">
+        <label style="display:block; font-size: 0.9em; margin-bottom: 3px;">Answer Key PDF/Text (Optional):</label>
+        <input type="file" id="answerKeyFile" accept=".pdf,.txt">
+    </div>
+    <label style="display:block; font-size: 0.9em; margin-bottom: 3px;">Additional Instructions / Raw Text:</label>
+    <textarea id="testText" placeholder="Paste raw text here if not using files, or add specific instructions..."
+        style="height: 100px;"></textarea>
+    <button id="processBtn">Process & Parse</button>
+    <div id="status"></div>
+    <script src="popup.js"></script>
+</body>
+
+</html>

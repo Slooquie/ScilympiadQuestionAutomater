@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Scilympiad Test Uploader",
+  "version": "1.0",
+  "description": "Automates the uploading of tests to Scilympiad using Gemini API.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://scilympiad.com/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://scilympiad.com/*",
+        "http://scilympiad.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://scilympiad.com/*",
+        "http://scilympiad.com/*"
+      ],
+      "js": [
+        "summernote_bridge.js"
+      ],
+      "world": "MAIN",
+      "all_frames": true
+    }
+  ]
+}
