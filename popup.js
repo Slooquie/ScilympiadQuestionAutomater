@@ -163,7 +163,10 @@ document.getElementById('processBtn').addEventListener('click', async () => {
         await chrome.storage.local.set({ scilympiadTestData: parsedData });
         console.log('Popup: Data saved to chrome.storage.local:', parsedData);
 
-        statusDiv.textContent = 'Success! Data saved. Please navigate to the Scilympiad test page.';
+        statusDiv.textContent = 'Success! Data saved. Opening preview...';
+
+        // Open preview page in a new tab
+        window.open(chrome.runtime.getURL('preview.html'), '_blank');
 
     } catch (error) {
         statusDiv.textContent = 'Error: ' + error.message;
