@@ -75,7 +75,7 @@ async function processQuestion(q, uiInfoRef) {
     bridgeAction('change-type', { value: typeValue });
 
     // 3. Wait for editors
-    const requiredEditors = isFRQ ? 2 : (1 + (q.options ? q.options.length : 0));
+    const requiredEditors = isFRQ ? 1 : (1 + (q.options ? q.options.length : 0));
     const ready = await waitForOptionsToLoad(requiredEditors);
     if (!ready) console.warn(`Automator: Wanted ${requiredEditors} editors, found fewer. Proceeding anyway.`);
 
@@ -101,9 +101,23 @@ async function processQuestion(q, uiInfoRef) {
     await delay(500);
 
     if (isFRQ) {
-        // Inject correct answer directly into the second editor box
+        // FRQ answers use a standard input/textarea, not a Summernote editor
         if (q.correct_answer) {
-            bridgeAction('inject', { content: q.correct_answer, index: 1 });
+            const answerInput = Array.from(document.querySelectorAll('textarea, input[type="text"]')).find(el =>
+                el.placeholder && el.placeholder.toLowerCase().includes('reference for grader')
+            );
+
+            if (answerInput) {
+                answerInput.value = q.correct_answer;
+            } else {
+                // Fallback: look for visible generic answer inputs
+                const fallbackInput = Array.from(document.querySelectorAll('textarea, input[type="text"]')).find(el => {
+                    const name = (el.name || '').toLowerCase();
+                    return el.offsetParent !== null && !el.className.includes('note-') && !name.includes('point') && !name.includes('order');
+                });
+                if (fallbackInput) fallbackInput.value = q.correct_answer;
+                else console.warn("Automator: Could not find the FRQ answer box.");
+            }
             await delay(400);
         }
     } else if (q.options) {
