@@ -283,8 +283,8 @@ function saveDataAndLaunch() {
 
     // Save to storage
     chrome.storage.local.set({ scilympiadTestData: newData }, function () {
-        // Reset state for the automator
-        chrome.storage.local.set({ scilympiadLoopState: { isRunning: true, currentIndex: 0 } }, function () {
+        // Reset state for the automator but do NOT start automatically
+        chrome.storage.local.set({ scilympiadLoopState: { isRunning: false, currentIndex: 0 } }, function () {
             // Open Scilympiad
             window.open('https://scilympiad.com/rosecity/Es/TQuestion', '_blank');
             window.close(); // Close preview
