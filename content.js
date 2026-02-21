@@ -68,6 +68,8 @@ async function processQuestion(q, uiInfoRef) {
             const txt = opt.text.toLowerCase();
             if (typeKeywords.some(kw => txt.includes(kw))) {
                 typeValue = opt.value;
+                frameSelect.value = typeValue;
+                frameSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 break;
             }
         }
@@ -109,13 +111,19 @@ async function processQuestion(q, uiInfoRef) {
 
             if (answerInput) {
                 answerInput.value = q.correct_answer;
+                answerInput.dispatchEvent(new Event('input', { bubbles: true }));
+                answerInput.dispatchEvent(new Event('change', { bubbles: true }));
             } else {
                 // Fallback: look for visible generic answer inputs
                 const fallbackInput = Array.from(document.querySelectorAll('textarea, input[type="text"]')).find(el => {
                     const name = (el.name || '').toLowerCase();
                     return el.offsetParent !== null && !el.className.includes('note-') && !name.includes('point') && !name.includes('order');
                 });
-                if (fallbackInput) fallbackInput.value = q.correct_answer;
+                if (fallbackInput) {
+                    fallbackInput.value = q.correct_answer;
+                    fallbackInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    fallbackInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
                 else console.warn("Automator: Could not find the FRQ answer box.");
             }
             await delay(400);
