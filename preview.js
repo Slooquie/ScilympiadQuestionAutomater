@@ -241,31 +241,48 @@ function createRow(q, index) {
 }
 
 function loadData() {
-    chrome.storage.local.get(['scilympiadTestData'], function (result) {
-        let data = result.scilympiadTestData || [];
-
-        // Auto-correct if the AI returns an object like { "questions": [...] }
-        if (data && !Array.isArray(data)) {
-            const keys = Object.keys(data);
-            for (let k of keys) {
-                if (Array.isArray(data[k])) {
-                    data = data[k];
-                    break;
-                }
-            }
+    try {
+        if (!chrome || !chrome.storage || !chrome.storage.local) {
+            console.error("Storage API not available. Retrying...");
+            setTimeout(loadData, 500);
+            return;
         }
 
-        if (!Array.isArray(data)) data = []; // Final fallback
+        chrome.storage.local.get(['scilympiadTestData'], function (result) {
+            if (chrome.runtime.lastError) {
+                console.error("Storage error:", chrome.runtime.lastError);
+                setTimeout(loadData, 500); // Retry
+                return;
+            }
 
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
+            let data = result.scilympiadTestData || [];
 
-        document.getElementById('status').textContent = `Loaded ${data.length} questions.`;
+            // Auto-correct if the AI returns an object like { "questions": [...] }
+            if (data && !Array.isArray(data)) {
+                const keys = Object.keys(data);
+                for (let k of keys) {
+                    if (Array.isArray(data[k])) {
+                        data = data[k];
+                        break;
+                    }
+                }
+            }
 
-        data.forEach((q, i) => {
-            tbody.appendChild(createRow(q, i));
+            if (!Array.isArray(data)) data = []; // Final fallback
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            document.getElementById('status').textContent = `Loaded ${data.length} questions.`;
+
+            data.forEach((q, i) => {
+                tbody.appendChild(createRow(q, i));
+            });
         });
-    });
+    } catch (e) {
+        console.error("loadData exception:", e);
+        setTimeout(loadData, 500);
+    }
 }
 
 function saveDataAndLaunch() {
@@ -330,6 +347,9 @@ function saveDataAndLaunch() {
 }
 
 function initPreview() {
+    if (window._previewInitialized) return;
+    window._previewInitialized = true;
+
     loadData();
 
     document.getElementById('saveAndLaunchBtn').addEventListener('click', saveDataAndLaunch);
@@ -345,7 +365,28 @@ function initPreview() {
             document.getElementById('tableBody').innerHTML = '';
         }
     });
+
+    // Auto-reload data if storage changes late after window.open
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes.scilympiadTestData) {
+            console.log("Storage updated, reloading preview...");
+            loadData();
+        }
+    });
 }
 
-// Run immediately since script is at end of body
-initPreview();
+// Robust bootstrap
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPreview);
+} else {
+    initPreview();
+}
+
+// Ultimate fallback if it fails silently
+setTimeout(() => {
+    const statusEl = document.getElementById('status');
+    if (statusEl && statusEl.textContent.includes('Loading data')) {
+        console.warn('Fallback: Data still loading, forcing retry...');
+        loadData();
+    }
+}, 2000);
