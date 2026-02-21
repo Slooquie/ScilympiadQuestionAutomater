@@ -367,12 +367,14 @@ function initPreview() {
     });
 
     // Auto-reload data if storage changes late after window.open
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === 'local' && changes.scilympiadTestData) {
-            console.log("Storage updated, reloading preview...");
-            loadData();
-        }
-    });
+    if (chrome && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local' && changes.scilympiadTestData) {
+                console.log("Storage updated, reloading preview...");
+                loadData();
+            }
+        });
+    }
 }
 
 // Robust bootstrap
