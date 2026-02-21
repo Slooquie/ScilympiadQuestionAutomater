@@ -104,12 +104,13 @@ document.getElementById('processBtn').addEventListener('click', async () => {
         // System Instruction / Context
         let systemPrompt = `You are a precise data-extraction parser for Science Olympiad tests. 
         Your task is to extract questions and answers and convert them into a strict JSON array.
-        Format: [{"question_number": 1, "question_text": "...", "type": "multiple_choice" | "true_false" | "free_response", "options": ["A", "B", "C", "D"] or null, "correct_answer": "...", "points": 1, "requires_image": true/false}].
+        Format: [{"question_number": 1, "question_text": "...", "type": "multiple_choice" | "true_false" | "short_answer", "options": ["A", "B", "C", "D"] or null, "correct_answer": "...", "points": 1, "requires_image": true/false}].
         
         CRITICAL INSTRUCTIONS:
         1. Output ONLY minified JSON.
         2. "requires_image": Set to true IF the question refers to a diagram, graph, map, or picture present in the document.
-        3. If an answer key is provided, use it.
+        3. For "short_answer" questions (FRQs), set "options" to null and put the expected answer rubric or expected text in "correct_answer".
+        4. If an answer key is provided, use it.
         `;
 
         if (testText) {

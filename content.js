@@ -57,12 +57,16 @@ async function processQuestion(q, uiInfoRef) {
         await delay(2000); // Wait for form to appear/slide down
     }
 
-    // 2. Select Multiple Choice using BRIDGE
-    let typeValue = '3';
+    // 2. Select Question Type using BRIDGE
+    let typeValue = '3'; // Default Multiple Choice
+    const isFRQ = q.type === 'short_answer';
+    const typeKeywords = isFRQ ? ['short answer', 'essay'] : ['multiple choice', 'multiple answers'];
+
     const frameSelect = document.querySelector('select#Type');
     if (frameSelect) {
         for (let opt of frameSelect.options) {
-            if (opt.text.toLowerCase().includes('multiple choice') || opt.text.toLowerCase().includes('multiple answers')) {
+            const txt = opt.text.toLowerCase();
+            if (typeKeywords.some(kw => txt.includes(kw))) {
                 typeValue = opt.value;
                 break;
             }
@@ -70,37 +74,42 @@ async function processQuestion(q, uiInfoRef) {
     }
     bridgeAction('change-type', { value: typeValue });
 
-    // 3. Wait for options
-    const requiredEditors = 1 + (q.options ? q.options.length : 0);
+    // 3. Wait for editors
+    const requiredEditors = isFRQ ? 2 : (1 + (q.options ? q.options.length : 0));
     const ready = await waitForOptionsToLoad(requiredEditors);
-    if (!ready) console.warn(`Automator: Wanted ${requiredEditors} editors, but found fewer. The page says '6 boxes appear automatically', so we proceed.`);
+    if (!ready) console.warn(`Automator: Wanted ${requiredEditors} editors, found fewer. Proceeding anyway.`);
 
     // 4. Inject
     const cleanText = (text) => {
         if (!text) return "";
         let t = text.trim();
-        t = t.replace(/^[A-Z][\.\)\:]\s*/i, '');
+        if (!isFRQ) {
+            t = t.replace(/^[A-Z][\.\)\:]\s*/i, '');
+        }
         if (t.endsWith(',')) t = t.slice(0, -1);
         return t.trim();
     };
 
     bridgeAction('inject', { content: cleanText(q.question_text), index: 0 });
 
-    // Inject Image if present
     if (q.image) {
         await delay(300);
-        // We append the image to the same editor (index 0)
-        // Note: We use 'insertHTML' often, calling it twice appends.
         const imgHtml = `<br><img src="${q.image}" style="max-width: 100%; margin-top: 10px;">`;
         bridgeAction('inject', { content: imgHtml, index: 0 });
     }
 
-    await delay(500); // Increased initial delay for safety
+    await delay(500);
 
-    if (q.options) {
+    if (isFRQ) {
+        // Inject correct answer directly into the second editor box
+        if (q.correct_answer) {
+            bridgeAction('inject', { content: q.correct_answer, index: 1 });
+            await delay(400);
+        }
+    } else if (q.options) {
         for (let j = 0; j < q.options.length; j++) {
             bridgeAction('inject', { content: cleanText(q.options[j]), index: j + 1 });
-            await delay(400); // Increased delay per option (was 200)
+            await delay(400);
         }
     }
 
@@ -108,33 +117,35 @@ async function processQuestion(q, uiInfoRef) {
     const pointsInput = document.querySelector('input[name*="Point"], input[name*="Value"]');
     if (pointsInput) pointsInput.value = q.points;
 
-    // 5. Correct Answer
-    let answerInputs = Array.from(document.querySelectorAll('input[type="radio"], input[type="checkbox"]')).filter(el => {
-        const wrapper = el.closest('label') || el.closest('div') || el.parentElement;
-        return wrapper && wrapper.textContent.includes('option is correct');
-    });
+    // 5. Correct Answer (Only if MCQ)
+    if (!isFRQ) {
+        let answerInputs = Array.from(document.querySelectorAll('input[type="radio"], input[type="checkbox"]')).filter(el => {
+            const wrapper = el.closest('label') || el.closest('div') || el.parentElement;
+            return wrapper && wrapper.textContent.includes('option is correct');
+        });
 
-    if (answerInputs.length === 0) {
-        const answersHeader = Array.from(document.querySelectorAll('*')).find(el => el.textContent && el.textContent.includes('Specify up to 6 answers'));
-        if (answersHeader) {
-            const allRadios = Array.from(document.querySelectorAll('input[type="radio"]'));
-            answerInputs = allRadios.filter(el => el.compareDocumentPosition(answersHeader) & Node.DOCUMENT_POSITION_PRECEDING);
-        }
-    }
-
-    if (q.correct_answer && answerInputs.length > 0) {
-        let idx = -1;
-        if (q.correct_answer.match(/^[A-F]$/i)) {
-            idx = q.correct_answer.toUpperCase().charCodeAt(0) - 65;
-        } else {
-            const cleanAns = cleanText(q.correct_answer).toLowerCase();
-            idx = q.options.findIndex(o => cleanText(o).toLowerCase() === cleanAns);
+        if (answerInputs.length === 0) {
+            const answersHeader = Array.from(document.querySelectorAll('*')).find(el => el.textContent && el.textContent.includes('Specify up to 6 answers'));
+            if (answersHeader) {
+                const allRadios = Array.from(document.querySelectorAll('input[type="radio"]'));
+                answerInputs = allRadios.filter(el => el.compareDocumentPosition(answersHeader) & Node.DOCUMENT_POSITION_PRECEDING);
+            }
         }
 
-        if (idx >= 0 && idx < answerInputs.length) {
-            const target = answerInputs[idx];
-            const label = target.closest('label');
-            if (label) label.click(); else target.click();
+        if (q.correct_answer && answerInputs.length > 0) {
+            let idx = -1;
+            if (q.correct_answer.match(/^[A-F]$/i)) {
+                idx = q.correct_answer.toUpperCase().charCodeAt(0) - 65;
+            } else {
+                const cleanAns = cleanText(q.correct_answer).toLowerCase();
+                idx = q.options.findIndex(o => cleanText(o).toLowerCase() === cleanAns);
+            }
+
+            if (idx >= 0 && idx < answerInputs.length) {
+                const target = answerInputs[idx];
+                const label = target.closest('label');
+                if (label) label.click(); else target.click();
+            }
         }
     }
 

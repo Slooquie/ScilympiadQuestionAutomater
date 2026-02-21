@@ -7,6 +7,24 @@ function createRow(q, index) {
     tdIndex.textContent = index + 1;
     tr.appendChild(tdIndex);
 
+    // Type Selector
+    const tdType = document.createElement('td');
+    const typeSelect = document.createElement('select');
+    typeSelect.className = 'q-type';
+    typeSelect.style.width = '100%';
+    typeSelect.style.padding = '5px';
+    ['multiple_choice', 'short_answer'].forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.text = val === 'short_answer' ? 'Short Answer/Essay' : 'Multiple Choice';
+        typeSelect.add(opt);
+    });
+
+    const initialType = (q.type === 'short_answer' || q.type === 'free_response') ? 'short_answer' : 'multiple_choice';
+    typeSelect.value = initialType;
+    tdType.appendChild(typeSelect);
+    tr.appendChild(tdType);
+
     // Question Text & Image
     const tdQ = document.createElement('td');
     const taQ = document.createElement('textarea');
@@ -115,74 +133,89 @@ function createRow(q, index) {
 
     // Options & Correct Answer
     const tdOpt = document.createElement('td');
-    const optContainer = document.createElement('div');
-    optContainer.className = 'options-container';
 
-    // Ensure we have at least some options or 4 blanks if none
-    const options = (q.options && q.options.length > 0) ? q.options : ['', '', '', ''];
+    const renderOptionsUI = () => {
+        tdOpt.innerHTML = '';
+        if (typeSelect.value === 'short_answer') {
+            const label = document.createElement('div');
+            label.textContent = "Answer Key / Rubric:";
+            label.style.fontSize = "12px";
+            label.style.fontWeight = "bold";
+            const ta = document.createElement('textarea');
+            ta.className = 'q-correct-text';
+            ta.value = q.correct_answer || '';
+            ta.placeholder = "Enter the expected answer key here...";
+            tdOpt.appendChild(label);
+            tdOpt.appendChild(ta);
+        } else {
+            const optContainer = document.createElement('div');
+            optContainer.className = 'options-container';
 
-    options.forEach((optText, i) => {
-        const div = document.createElement('div');
-        div.className = 'option-row';
+            const options = (q.options && q.options.length > 0) ? q.options : ['', '', '', ''];
 
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = `correct_q${index}`; // Group by question
-        radio.value = i;
-        radio.className = 'correct-radio';
+            options.forEach((optText, i) => {
+                const div = document.createElement('div');
+                div.className = 'option-row';
 
-        // Check if this is the correct answer
-        // Logic: if correct_answer is 'A', 'B', etc. OR valid text match
-        let isCorrect = false;
-        if (q.correct_answer) {
-            if (q.correct_answer.length === 1 && q.correct_answer.match(/[A-Z]/i)) {
-                const charCode = q.correct_answer.toUpperCase().charCodeAt(0) - 65;
-                if (charCode === i) isCorrect = true;
-            } else if (optText && q.correct_answer.includes(optText)) {
-                isCorrect = true;
-            }
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = `correct_q${index}`; // Group by question
+                radio.value = i;
+                radio.className = 'correct-radio';
+
+                let isCorrect = false;
+                if (q.correct_answer) {
+                    if (q.correct_answer.length === 1 && q.correct_answer.match(/[A-Z]/i)) {
+                        const charCode = q.correct_answer.toUpperCase().charCodeAt(0) - 65;
+                        if (charCode === i) isCorrect = true;
+                    } else if (optText && q.correct_answer.includes(optText)) {
+                        isCorrect = true;
+                    }
+                }
+                if (isCorrect) radio.checked = true;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = optText;
+                input.style.flex = "1";
+                input.style.padding = "5px";
+                input.className = 'opt-text';
+
+                const delOpt = document.createElement('button');
+                delOpt.textContent = 'x';
+                delOpt.className = 'btn-danger';
+                delOpt.style.padding = '2px 6px';
+                delOpt.style.marginLeft = '5px';
+                delOpt.onclick = () => div.remove();
+
+                div.appendChild(radio);
+                div.appendChild(input);
+                div.appendChild(delOpt);
+                optContainer.appendChild(div);
+            });
+
+            const addOptBtn = document.createElement('button');
+            addOptBtn.textContent = '+ Add Option';
+            addOptBtn.className = 'btn-secondary';
+            addOptBtn.style.marginTop = '5px';
+            addOptBtn.style.fontSize = '12px';
+            addOptBtn.onclick = () => {
+                const div = document.createElement('div');
+                div.className = 'option-row';
+                div.innerHTML = `<input type="radio" name="correct_q${index}" class="correct-radio" value="${optContainer.children.length - 1}">
+                                 <input type="text" style="flex:1; padding:5px;" class="opt-text">
+                                 <button class="btn-danger" style="padding:2px 6px; margin-left:5px;" onclick="this.parentElement.remove()">x</button>`;
+                optContainer.insertBefore(div, addOptBtn);
+            };
+
+            optContainer.appendChild(addOptBtn);
+            tdOpt.appendChild(optContainer);
         }
-        if (isCorrect) radio.checked = true;
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = optText;
-        input.style.flex = "1";
-        input.style.padding = "5px";
-        input.className = 'opt-text';
-
-        // Helper: Delete Option Button
-        const delOpt = document.createElement('button');
-        delOpt.textContent = 'x';
-        delOpt.className = 'btn-danger';
-        delOpt.style.padding = '2px 6px';
-        delOpt.style.marginLeft = '5px';
-        delOpt.onclick = () => div.remove();
-
-        div.appendChild(radio);
-        div.appendChild(input);
-        div.appendChild(delOpt);
-        optContainer.appendChild(div);
-    });
-
-    // Add Option Button
-    const addOptBtn = document.createElement('button');
-    addOptBtn.textContent = '+ Add Option';
-    addOptBtn.className = 'btn-secondary';
-    addOptBtn.style.marginTop = '5px';
-    addOptBtn.style.fontSize = '12px';
-    addOptBtn.onclick = () => {
-        const div = document.createElement('div');
-        div.className = 'option-row';
-        div.innerHTML = `<input type="radio" name="correct_q${index}" class="correct-radio" value="${optContainer.children.length}">
-                         <input type="text" style="flex:1; padding:5px;" class="opt-text">
-                         <button class="btn-danger" style="padding:2px 6px; margin-left:5px;" onclick="this.parentElement.remove()">x</button>`;
-        // Insert before button
-        optContainer.insertBefore(div, addOptBtn);
     };
 
-    optContainer.appendChild(addOptBtn);
-    tdOpt.appendChild(optContainer);
+    renderOptionsUI();
+    typeSelect.onchange = renderOptionsUI;
+
     tr.appendChild(tdOpt);
 
     // Points
@@ -261,22 +294,26 @@ function saveDataAndLaunch() {
             if (txt.trim()) {
                 options.push(txt);
                 // If checked, map back to a letter (A, B, C...) or the text itself?
-                // The extension content.js handles 'A' 'B' or exact text.
-                // Let's use the exact text for safety, or index mapping.
-                // Actually content.js supports Letter mapping. Let's send the Letter (A=0, B=1)
-                if (radio.checked) {
+                if (radio && radio.checked) {
                     cleanCorrectAnswer = String.fromCharCode(65 + options.length - 1); // 0->A, 1->B
                 }
             }
         });
+
+        const qTypeSelect = tr.querySelector('.q-type');
+        const qType = qTypeSelect ? qTypeSelect.value : (q.type || "multiple_choice");
+        if (qType === 'short_answer') {
+            const ta = tr.querySelector('.q-correct-text');
+            if (ta) cleanCorrectAnswer = ta.value;
+        }
 
         newData.push({
             question_number: i + 1,
             question_text: qText,
             image: finalImg,
             points: points,
-            type: "Multiple Choice", // Forced for now as per UI
-            options: options,
+            type: qType,
+            options: qType === 'short_answer' ? null : options,
             correct_answer: cleanCorrectAnswer
         });
     });
